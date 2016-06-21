@@ -27,15 +27,29 @@ from fabric.api import local, quiet
 # the bin directory would lead to problems importing modules in the clusterdock package.
 sys.path.insert(0, dirname(dirname(abspath(__file__))))
 
-from clusterdock.docker_utils import (kill_all_containers, remove_all_containers,
-                                      remove_all_images, remove_all_networks)
+from clusterdock.docker_utils import (get_container_id, get_network_container_hostnames,
+                                      kill_all_containers, remove_all_containers,
+                                      remove_all_images, remove_all_networks,
+                                      remove_container, remove_network)
 
 logger = logging.getLogger('housekeeping')
 logger.setLevel(logging.INFO)
 
 def main():
     parser = argparse.ArgumentParser(description='Perform common Docker housekeeping actions')
-    parser.add_argument('action', choices=['nuke', 'remove_all_images'], help='Action to carry out')
+    subparsers = parser.add_subparsers(help='Action to carry out')
+
+    nuke_parser = subparsers.add_parser('nuke')
+    nuke_parser.set_defaults(action='nuke')
+
+    remove_all_images_parser = subparsers.add_parser('remove_all_images')
+    remove_all_images_parser.set_defaults(action='remove_all_images')
+
+    remove_parser = subparsers.add_parser('remove')
+    remove_parser.add_argument('-n', '--network', help='Network to be removed', action='append')
+    remove_parser.add_argument('-c', '--container', help='Container to be removed', action='append')
+    remove_parser.set_defaults(action='remove')
+
     args = parser.parse_args()
 
     if args.action == 'nuke':
@@ -63,6 +77,23 @@ def main():
         logger.info('Removing all images on this host...')
         remove_all_images()
         logger.info('Successfully removed all images.')
+    elif args.action == 'remove':
+        if args.network:
+            for network in args.network:
+                containers = get_network_container_hostnames(network)
+                if containers:
+                    logger.info('Removing all containers in network "%s" ...', network)
+                    for container in containers:
+                        remove_container(get_container_id(container, network))
+                    logger.info('Successfully removed all containers in network "%s".', network)
+                logger.info('Removing network "%s" itself...', network)
+                remove_network(network)
+                logger.info('Successfully removed network "%s".', network)
+        if args.container:
+            logger.info('Removing all specified containers...')
+            for container in args.container:
+                remove_container(container)
+            logger.info('Successfully removed all specified containers.')
 
 if __name__ == '__main__':
     main()
