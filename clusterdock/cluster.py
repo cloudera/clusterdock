@@ -62,7 +62,7 @@ class Cluster(object):
             while True:
                 try:
                     client.create_network(name=self.network_name, driver='bridge', ipam={
-                        "Config": [create_ipam_pool(subnet=next_network_subnet)]
+                        'Config': [create_ipam_pool(subnet=next_network_subnet)]
                     })
                 except APIError as api_error:
                     if 'networks have overlapping IPv4' not in api_error.explanation:
@@ -83,7 +83,7 @@ class Cluster(object):
                                     get_network_subnet(conflicting_network)
                                 )
                             except NetworkNotFoundException as network_not_found_exception:
-                                if "Cannot find network" not in network_not_found_exception.message:
+                                if 'Cannot find network' not in network_not_found_exception.message:
                                     raise network_not_found_exception
                                 sleep(1)
                             else:
@@ -208,35 +208,37 @@ class Node(object):
         # Create a host_configs dictionary to populate and then pass to Client.create_host_config().
         host_configs = {}
         # To make them act like real hosts, Nodes must have all Linux capabilities enabled. For
-        # some reason, we discovered that doing this causes less trouble than start containers in
-        # privileged mode (see KITCHEN-10073). We also pass in the volumes list at this point.
-        host_configs["cap_add"] = ["ALL"]
-        host_configs["publish_all_ports"] = True
+        # some reason, we discovered that doing this causes less trouble than starting containers in
+        # privileged mode (see KITCHEN-10073). We also disable the default seccomp profile (see #3)
+        # and pass in the volumes list at this point.
+        host_configs['cap_add'] = ['ALL']
+        host_configs['security_opt'] = ['seccomp:unconfined']
+        host_configs['publish_all_ports'] = True
 
         if self.volumes:
-            host_configs["binds"] = self._get_binds()
+            host_configs['binds'] = self._get_binds()
 
         self.host_config = client.create_host_config(**host_configs)
 
         # docker-py runs containers in a two-step process: first it creates a container and then
         # it starts the container using the container ID.
         container_configs = {
-            "hostname": self.fqdn,
-            "image": self.image,
-            "host_config": self.host_config,
-            "detach": True,
-            "command": self.command,
-            "ports": self.ports,
-            "volumes": [volume[host_location] for volume in self.volumes
+            'hostname': self.fqdn,
+            'image': self.image,
+            'host_config': self.host_config,
+            'detach': True,
+            'command': self.command,
+            'ports': self.ports,
+            'volumes': [volume[host_location] for volume in self.volumes
                         for host_location in volume if self.volumes],
-            "labels": {"volume{0}".format(i): volume
+            'labels': {"volume{0}".format(i): volume
                        for i, volume in enumerate([volume.keys()[0]
                                                    for volume in self.volumes
                                                    if volume.keys()[0] not in ['/etc/localtime']],
                                                   start=1)
                       }
         }
-        self.container_id = client.create_container(**container_configs)["Id"]
+        self.container_id = client.create_container(**container_configs)['Id']
 
         # Don't start up containers on the default 'bridge' network for better isolation.
         client.disconnect_container_from_network(container=self.container_id, net_id='bridge')
