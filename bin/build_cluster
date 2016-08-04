@@ -48,8 +48,6 @@ if __name__ == '__main__':
                         metavar="os", default="centos6.6")
     parser.add_argument('--namespace', metavar='ns',
                         help='The namespace to use when tagging the image')
-    parser.add_argument('--nodebase-image', metavar='image',
-                        help='Nodebase image name to use instead of the default')
     parser.add_argument('-n', '--network', help='User-defined network to use',
                         metavar="network", default='cluster')
     parser.add_argument('-p', '--push', help='Push Docker images', action='store_true')

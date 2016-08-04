@@ -43,7 +43,7 @@ def main():
     parser.add_argument('--always-pull', help='Pull latest images, even if available locally',
                         action='store_true')
     parser.add_argument('--namespace', metavar='ns',
-                        help='The namespace to use when tagging the image')
+                        help='The namespace to use when creating the image')
     parser.add_argument('-n', '--network', help="User-defined network to use",
                         metavar="network", default="cluster")
     parser.add_argument('-o', '--operating-system', help="Operating system of the cluster",
