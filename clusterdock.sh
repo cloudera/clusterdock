@@ -97,7 +97,7 @@ clusterdock_run() {
       "${CLUSTERDOCK_IMAGE}" $@
 
   if [ -n "${TOPOLOGY_CONTAINER_ID}" ]; then
-    sudo docker rm -v "${TOPOLOGY_CONTAINER_ID}" > /dev/null
+    sudo docker rm -v "${TOPOLOGY_CONTAINER_ID}" &> /dev/null
   fi
 }
 
