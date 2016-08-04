@@ -40,7 +40,8 @@ DEFAULT_DOCKER_REGISTRY_URL = Constants.DEFAULT.docker_registry_url
 
 def main(args):
     image = '/'.join([item
-                      for item in (args.registry_url, args.namespace, args.image)
+                      for item in (args.registry_url, args.namespace,
+                                   "clusterdock:{0}".format(args.image))
                       if item])
     dockerfile = join(images_folder, args.image, 'Dockerfile')
     build_image(dockerfile=dockerfile, tag=image)
