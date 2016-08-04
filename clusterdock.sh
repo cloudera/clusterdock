@@ -83,7 +83,7 @@ clusterdock_run() {
 
   # The /etc/hosts bind-mount allows clusterdock to update /etc/hosts on the host machine for
   # better access to internal container addresses.
-  sudo docker run --net=host --rm -t \
+  sudo docker run --net=host -t \
       --privileged \
       ${TARGET_DIR_MOUNT} \
       ${TOPOLOGY_VOLUME} \
