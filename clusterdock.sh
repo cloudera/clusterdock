@@ -28,10 +28,17 @@
 ## @param        Python script to run relative to the ./dev-support/clusterdock/clusterdock folder
 clusterdock_run() {
   # Supported environmental variables:
+  # - CLUSTERDOCK_DOCKER_REGISTRY_INSECURE: whether the Docker registry is insecure (either true or
+  #                                         false)
+  # - CLUSTERDOCK_DOCKER_REGISTRY_USERNAME: username needed to login to any secure Docker registry
+  # - CLUSTERDOCK_DOCKER_REGISTRY_PASSWORD: password needed to login to any secure Docker registry
+  # - CLUSTERDOCK_IMAGE: the Docker image from which to start the clusterdock framework container
+  # - CLUSTERDOCK_PULL: whether to pull the clusterdock image and CLUSTERDOCK_TOPOLOGY_IMAGE, if
+  #                     specified (either true or false; defaults to true)
   # - CLUSTERDOCK_TARGET_DIR: a folder on the host to mount into /root/target in the clusterdock
   #                           container
-  # - CLUSTERDOCK_PULL: whether to pull the clusterdock image (either true or false; defaults to
-  #                     true)
+  # - CLUSTERDOCK_TOPOLOGY_IMAGE: a Docker image to mount into clusterdock's topology folder and
+  #                               make available to users
 
   if [ -z "${CLUSTERDOCK_IMAGE}" ]; then
     local CONSTANTS_CONFIG_URL='https://raw.githubusercontent.com/cloudera/clusterdock/master/clusterdock/constants.cfg'
@@ -65,11 +72,21 @@ clusterdock_run() {
     local REGISTRY_PASSWORD="-e DOCKER_REGISTRY_PASSWORD=${CLUSTERDOCK_DOCKER_REGISTRY_PASSWORD}"
   fi
 
+  if [ -n "${CLUSTERDOCK_TOPOLOGY_IMAGE}" ]; then
+    if [ "${CLUSTERDOCK_PULL}" != "false" ]; then
+      sudo docker pull "${CLUSTERDOCK_TOPOLOGY_IMAGE}"
+    fi
+
+    local TOPOLOGY_CONTAINER_ID=$(sudo docker create "${CLUSTERDOCK_TOPOLOGY_IMAGE}")
+    local TOPOLOGY_VOLUME="--volumes-from=${TOPOLOGY_CONTAINER_ID}"
+  fi
+
   # The /etc/hosts bind-mount allows clusterdock to update /etc/hosts on the host machine for
   # better access to internal container addresses.
-  sudo docker run --net=host -t \
+  sudo docker run --net=host --rm -t \
       --privileged \
       ${TARGET_DIR_MOUNT} \
+      ${TOPOLOGY_VOLUME} \
       ${REGISTRY_INSECURE} \
       ${REGISTRY_USERNAME} \
       ${REGISTRY_PASSWORD} \
@@ -78,6 +95,10 @@ clusterdock_run() {
       -v /etc/localtime:/etc/localtime \
       -v /var/run/docker.sock:/var/run/docker.sock \
       "${CLUSTERDOCK_IMAGE}" $@
+
+  if [ -n "${TOPOLOGY_CONTAINER_ID}" ]; then
+    sudo docker rm -v "${TOPOLOGY_CONTAINER_ID}" > /dev/null
+  fi
 }
 
 ## @description  SSH to a clusterdock-created container cluster node
