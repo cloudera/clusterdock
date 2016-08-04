@@ -58,11 +58,9 @@ def start(args):
     CM_SERVER_PORT = 7180
 
     primary_node = Node(hostname=args.primary_node[0], network=args.network,
-                        image=primary_node_image, ports=[CM_SERVER_PORT],
-                        volumes=[])
+                        image=primary_node_image, ports=[CM_SERVER_PORT])
 
-    secondary_nodes = [Node(hostname=hostname, network=args.network, image=secondary_node_image,
-                            volumes=[])
+    secondary_nodes = [Node(hostname=hostname, network=args.network, image=secondary_node_image)
                        for hostname in args.secondary_nodes]
 
     secondary_node_group = NodeGroup(name='secondary', nodes=secondary_nodes)

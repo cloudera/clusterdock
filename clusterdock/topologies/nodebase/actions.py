@@ -36,7 +36,7 @@ def start(args):
         pull_image(image)
 
     node_groups = [NodeGroup(name='nodes', nodes=[Node(hostname=hostname, network=args.network,
-                                                       image=image, volumes=[])
+                                                       image=image)
                                                   for hostname in args.nodes])]
     cluster = Cluster(topology='nodebase', node_groups=node_groups, network_name=args.network)
     cluster.start()

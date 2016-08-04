@@ -199,7 +199,7 @@ class Node(object):
         self.ports = kwargs.get('ports')
         # /etc/localtime is always volume mounted so that containers have the same timezone as their
         # host machines.
-        self.volumes = [{'/etc/localtime': '/etc/localtime'}] + kwargs.get('volumes')
+        self.volumes = [{'/etc/localtime': '/etc/localtime'}] + kwargs.get('volumes', [])
 
         # Define a number of instance attributes that will get assigned proper values when the node
         # starts.
