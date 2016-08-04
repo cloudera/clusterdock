@@ -127,6 +127,15 @@ clusterdock_ssh() {
     sudo docker pull "${CLUSTERDOCK_IMAGE}"
   fi
 
+  if [ -n "${CLUSTERDOCK_TOPOLOGY_IMAGE}" ]; then
+    if [ "${CLUSTERDOCK_PULL}" != "false" ]; then
+      sudo docker pull "${CLUSTERDOCK_TOPOLOGY_IMAGE}"
+    fi
+
+    local TOPOLOGY_CONTAINER_ID=$(sudo docker create "${CLUSTERDOCK_TOPOLOGY_IMAGE}")
+    local TOPOLOGY_VOLUME="--volumes-from=${TOPOLOGY_CONTAINER_ID}"
+  fi
+
   # Some arguments to make SSH less finicky.
   local SSH_ARGS='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
 
@@ -134,6 +143,7 @@ clusterdock_ssh() {
   # better access to internal container addresses.
   sudo docker run --entrypoint=bash -it --net=host --rm \
       ${TARGET_DIR_MOUNT} \
+      ${TOPOLOGY_VOLUME} \
       -v /etc/hosts:/etc/hosts \
       -v /etc/localtime:/etc/localtime \
       -v /var/run/docker.sock:/var/run/docker.sock \
