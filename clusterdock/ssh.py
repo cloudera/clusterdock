@@ -30,30 +30,26 @@ SSH_MAX_RETRIES = 60
 env.disable_known_hosts = True
 fabric.state.output['running'] = False
 
-# Get the location of the SSH private key we need to log in to our nodes.
-key = os.path.join(os.path.dirname(__file__), 'topologies', 'cdh',
-                   'ssh', 'id_rsa') # pylint: disable=invalid-name
-
 @parallel(pool_size=8)
 @fabric.api.task
-def _quiet_task(command):
-    with settings(quiet(), always_use_pty=False, output_prefix=False, key_filename=key,
+def _quiet_task(command, ssh_key):
+    with settings(quiet(), always_use_pty=False, output_prefix=False, key_filename=ssh_key,
                   connection_attempts=SSH_MAX_RETRIES, timeout=SSH_TIMEOUT_IN_SECONDS):
         return run(command)
 
 @parallel(pool_size=8)
 @fabric.api.task
-def _task(command):
-    with settings(show('stdout'), always_use_pty=False, output_prefix=False, key_filename=key,
+def _task(command, ssh_key):
+    with settings(show('stdout'), always_use_pty=False, output_prefix=False, key_filename=ssh_key,
                   connection_attempts=SSH_MAX_RETRIES, timeout=SSH_TIMEOUT_IN_SECONDS):
         return run(command)
 
-def quiet_ssh(command, hosts):
+def quiet_ssh(command, hosts, ssh_key):
     """Execute command over SSH on hosts, suppressing all output. This is useful for instances where
     you may only want to see if a command succeeds or times out, since stdout is otherwise
     discarded."""
-    return execute(_quiet_task, command=command, hosts=hosts)
+    return execute(_quiet_task, command=command, hosts=hosts, ssh_key=ssh_key)
 
-def ssh(command, hosts):
+def ssh(command, hosts, ssh_key):
     """Execute command over SSH on hosts."""
-    return execute(_task, command=command, hosts=hosts)
+    return execute(_task, command=command, hosts=hosts, ssh_key=ssh_key)

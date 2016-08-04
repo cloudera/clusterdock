@@ -23,6 +23,7 @@ implemented here.
 import logging
 import re
 import threading
+from os.path import dirname, join
 from time import time, sleep
 
 from docker import Client
@@ -46,8 +47,12 @@ class Cluster(object):
     """The central abstraction for dealing with Docker container clusters. Instances of this class
     can be created as needed, but no Docker-specific behavior is done until start() is invoked.
     """
-    def __init__(self, node_groups, network_name):
-        """Takes a list of NodeGroups."""
+    def __init__(self, topology, node_groups, network_name):
+        """Creates a cluster instance from a given topology name, list of NodeGroups, and network
+        name."""
+        self.topology = topology
+        self.ssh_key = join(dirname(__file__), 'topologies', self.topology, 'ssh', 'id_rsa')
+
         self.node_groups = node_groups
         self.network_name = network_name
 
@@ -94,8 +99,9 @@ class Cluster(object):
 
     def ssh(self, command, nodes=None):
         """Execute command on all nodes (unless a list of Node instances is passed) in parallel."""
-        ssh(command,
-            [node.ip_address for node in self.nodes if not nodes or node in nodes])
+        ssh(command=command,
+            hosts=[node.ip_address for node in self.nodes if not nodes or node in nodes],
+            ssh_key=self.ssh_key)
 
     def start(self):
         """Actually start Docker containers, mimicking the cluster layout specified in the Cluster
@@ -108,6 +114,10 @@ class Cluster(object):
         network_container_hostnames = (
             get_network_container_hostnames(self.network_name))
         for node in self.nodes:
+            # Set the Node instance's cluster attribute to the Cluster instance to give the node
+            # access to the topology's SSH keys.
+            node.cluster = self
+
             if node.hostname in network_container_hostnames:
                 raise Exception(
                     "A container with hostname {0} already exists in network {1}".format(
@@ -162,7 +172,8 @@ class NodeGroup(object):
 
     def ssh(self, command):
         """Run command over SSH across all nodes in the NodeGroup in parallel."""
-        ssh(command, [node.ip_address for node in self.nodes])
+        ssh_key = self[0].cluster.ssh_key
+        ssh(command=command, hosts=[node.ip_address for node in self.nodes], ssh_key=ssh_key)
 
 class Node(object):
     """The abstraction will eventually be actualized as a running Docker container. This container,
@@ -171,7 +182,7 @@ class Node(object):
     """
 
     # pylint: disable=too-many-instance-attributes
-    # 10 instance attributes to keep track of node properties isn't too many (Pylint sets the limit
+    # 11 instance attributes to keep track of node properties isn't too many (Pylint sets the limit
     # at 7), and while we could create a single dictionary attribute, that doesn't really improve
     # readability.
 
@@ -192,6 +203,7 @@ class Node(object):
 
         # Define a number of instance attributes that will get assigned proper values when the node
         # starts.
+        self.cluster = None
         self.container_id = None
         self.host_config = None
         self.ip_address = None
@@ -248,11 +260,12 @@ class Node(object):
 
         self.ip_address = get_container_ip_address(container_id=self.container_id,
                                                    network=self.network)
-        if not is_container_reachable(container_id=self.container_id, network=self.network):
+        if not is_container_reachable(container_id=self.container_id, network=self.network,
+                                      ssh_key=self.cluster.ssh_key):
             raise Exception("Timed out waiting for {0} to become reachable.".format(self.hostname))
         else:
             logger.info("Successfully started %s (IP address: %s).", self.fqdn, self.ip_address)
 
     def ssh(self, command):
         """Run command over SSH on the node."""
-        ssh(command, [self.ip_address])
+        ssh(command=command, hosts=[self.ip_address], ssh_key=self.cluster.ssh_key)

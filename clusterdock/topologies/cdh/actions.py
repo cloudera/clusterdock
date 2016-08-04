@@ -69,7 +69,7 @@ def start(args):
     node_groups = [NodeGroup(name='primary', nodes=[primary_node]),
                    secondary_node_group]
 
-    cluster = Cluster(node_groups=node_groups, network_name=args.network)
+    cluster = Cluster(topology='cdh', node_groups=node_groups, network_name=args.network)
     cluster.start()
 
     '''

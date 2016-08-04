@@ -50,11 +50,12 @@ class ContainerExitCodeException(Exception):
     """An exception to raise when a container exits with a non-zero exit code."""
     pass
 
-def is_container_reachable(container_id, network=None):
+def is_container_reachable(container_id, ssh_key, network):
     """Return true if a container can be reached via SSH (timeout after 60 s), false otherwise."""
     try:
         start = time()
-        quiet_ssh("whoami", get_container_ip_address(container_id, network))
+        quiet_ssh(command="whoami", hosts=get_container_ip_address(container_id, network),
+                  ssh_key=ssh_key)
         end = time()
         logger.debug("Verified SSH connectivity in %s seconds.", end-start)
         return True

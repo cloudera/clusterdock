@@ -38,5 +38,5 @@ def start(args):
     node_groups = [NodeGroup(name='nodes', nodes=[Node(hostname=hostname, network=args.network,
                                                        image=image, volumes=[])
                                                   for hostname in args.nodes])]
-    cluster = Cluster(node_groups=node_groups, network_name=args.network)
+    cluster = Cluster(topology='nodebase', node_groups=node_groups, network_name=args.network)
     cluster.start()
