@@ -1,0 +1,82 @@
+#!/usr/bin/env python
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import argparse
+import importlib
+import logging
+import os
+import sys
+from os.path import dirname, abspath
+from time import gmtime, strftime, time
+
+from docker import Client
+
+# This path hack allows this script to be run from any folder. Otherwise, running it from within
+# the bin directory would lead to problems importing modules in the clusterdock package.
+sys.path.insert(0, dirname(dirname(abspath(__file__))))
+
+from clusterdock import Constants
+from clusterdock.docker_utils import push_image
+from clusterdock.topologies.parsing import get_profile_config_item, parse_profiles
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+DEFAULT_DOCKER_REGISTRY_URL = Constants.DEFAULT.docker_registry_url # pylint: disable=no-member
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Build cluster images',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    # Arguments that should be present for all possible topologies go here. This should be a very
+    # short list...
+    parser.add_argument('-o', '--operating-system', help='Operating system of the cluster',
+                        metavar="os", default="centos6.6")
+    parser.add_argument('--namespace', metavar='ns',
+                        help='The namespace to use when tagging the image')
+    parser.add_argument('--nodebase-image', metavar='image',
+                        help='Nodebase image name to use instead of the default')
+    parser.add_argument('-n', '--network', help='User-defined network to use',
+                        metavar="network", default='cluster')
+    parser.add_argument('-p', '--push', help='Push Docker images', action='store_true')
+    parser.add_argument('-r', '--registry-url', metavar='url', default=DEFAULT_DOCKER_REGISTRY_URL,
+                        help='URL of the Docker registry to use when naming and pushing the image')
+
+    # What args we parse depends on the topology we pass as the first position argument to this
+    # script. This is handled by the topologies module.
+    parse_profiles(parser, action='build')
+    args = parser.parse_args()
+
+    # To actually start the cluster for the specified topology, we dynamically import the specified
+    # topology and then call its start function.
+    actions = importlib.import_module("clusterdock.topologies.{0}.actions".format(args.topology))
+
+    # Keep time in a variable to output how long cluster deployment took at the end.
+    start = time()
+    images = actions.build(args)
+    end = time()
+    time_diff = gmtime(end-start)
+    topology_name = get_profile_config_item(args.topology, 'general', 'name')
+    logger.info("%s cluster built in %s.", topology_name, strftime("%M min, %S sec", time_diff))
+
+    if args.push:
+        if os.environ.get('DOCKER_REGISTRY_INSECURE') != 'true':
+            Client().login(username=os.environ['DOCKER_REGISTRY_USERNAME'],
+                           password=os.environ['DOCKER_REGISTRY_PASSWORD'],
+                           registry=args.registry_url)
+        for image in images:
+            push_image(image)
