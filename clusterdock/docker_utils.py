@@ -78,7 +78,7 @@ def is_image_available_locally(name):
     # becomes example/image:latest).
     if name.startswith('docker.io/'):
         name = name[len('docker.io/'):]
-    return any(tag == name for image in client.images() for tag in image['RepoTags'])
+    return any(name in image['RepoTags'] for image in client.images() if image['RepoTags'])
 
 def pull_image_if_missing(name):
     """Simple wrapper function that will pull the Docker image 'name' if it's not present on the
