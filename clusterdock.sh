@@ -53,7 +53,7 @@ clusterdock_run() {
   fi
 
   if [ "${CLUSTERDOCK_PULL}" != "false" ]; then
-    sudo docker pull "${CLUSTERDOCK_IMAGE}"
+    sudo docker pull "${CLUSTERDOCK_IMAGE}" &> /dev/null
   fi
 
   if [ -n "${CLUSTERDOCK_TARGET_DIR}" ]; then
@@ -74,7 +74,7 @@ clusterdock_run() {
 
   if [ -n "${CLUSTERDOCK_TOPOLOGY_IMAGE}" ]; then
     if [ "${CLUSTERDOCK_PULL}" != "false" ]; then
-      sudo docker pull "${CLUSTERDOCK_TOPOLOGY_IMAGE}"
+      sudo docker pull "${CLUSTERDOCK_TOPOLOGY_IMAGE}" &> /dev/null
     fi
 
     local TOPOLOGY_CONTAINER_ID=$(sudo docker create "${CLUSTERDOCK_TOPOLOGY_IMAGE}")
@@ -124,12 +124,12 @@ clusterdock_ssh() {
   fi
 
   if [ "${CLUSTERDOCK_PULL}" != "false" ]; then
-    sudo docker pull "${CLUSTERDOCK_IMAGE}"
+    sudo docker pull "${CLUSTERDOCK_IMAGE}" &> /dev/null
   fi
 
   if [ -n "${CLUSTERDOCK_TOPOLOGY_IMAGE}" ]; then
     if [ "${CLUSTERDOCK_PULL}" != "false" ]; then
-      sudo docker pull "${CLUSTERDOCK_TOPOLOGY_IMAGE}"
+      sudo docker pull "${CLUSTERDOCK_TOPOLOGY_IMAGE}" &> /dev/null
     fi
 
     local TOPOLOGY_CONTAINER_ID=$(sudo docker create "${CLUSTERDOCK_TOPOLOGY_IMAGE}")
