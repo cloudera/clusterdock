@@ -105,11 +105,12 @@ clusterdock_run() {
 ## @audience     public
 ## @stability    stable
 ## @replaceable  no
-## @param        Topology of the cluster
 ## @param        Fully-qualified domain name of container to which to connect
+## @param        An optional command to run
 clusterdock_ssh() {
-  local TOPOLOGY=${1}
-  local NODE=${2}
+  local NODE=${1}
+  # Shift away arguments by 1. If anything is left, it's a command to run over SSH.
+  shift 1
 
   if [ -z "${CLUSTERDOCK_IMAGE}" ]; then
     local CONSTANTS_CONFIG_URL='https://raw.githubusercontent.com/cloudera/clusterdock/master/clusterdock/constants.cfg'
@@ -136,17 +137,14 @@ clusterdock_ssh() {
     local TOPOLOGY_VOLUME="--volumes-from=${TOPOLOGY_CONTAINER_ID}"
   fi
 
-  # Some arguments to make SSH less finicky.
-  local SSH_ARGS='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+  local ID
+  for ID in $(docker ps -qa); do
+    if [ "$(docker inspect --format '{{.Config.Hostname}}' ${ID})" == "${NODE}" ]; then
+      break
+    fi
+  done
 
-  # The /etc/hosts bind-mount allows clusterdock to update /etc/hosts on the host machine for
-  # better access to internal container addresses.
-  sudo docker run --entrypoint=bash -it --net=host --rm \
-      ${TARGET_DIR_MOUNT} \
-      ${TOPOLOGY_VOLUME} \
-      -v /etc/hosts:/etc/hosts \
-      -v /etc/localtime:/etc/localtime \
-      -v /var/run/docker.sock:/var/run/docker.sock \
-      "${CLUSTERDOCK_IMAGE}" -c \
-      "ssh -i /root/clusterdock/clusterdock/topologies/${TOPOLOGY}/ssh/id_rsa ${SSH_ARGS} ${NODE}"
+  # In order to get a proper login shell with expected files sourced (e.g. /etc/environment), we
+  # get into the container using docker exec running ssh (instead of Bash).
+  sudo docker exec -it ${ID} ssh localhost "$*"
 }
