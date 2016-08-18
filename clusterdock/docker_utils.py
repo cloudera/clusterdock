@@ -208,6 +208,12 @@ def kill_container(name):
     logger.info("Killing container %s...", name)
     return client.kill(container=name)
 
+def login(username, password, registry):
+    """Python wrapper for the docker login command line argument. This is required since we do
+    docker pulls using a similar command line argument and need to have credentials cached locally.
+    """
+    local("docker login -u {0} -p {1} {2}".format(username, password, registry))
+
 def overlaps_network_subnet(subnet):
     """Takes subnet as string in CIDR format (e.g. 192.168.123.0/24) and returns true if it overlaps
     any existing Docker network subnets."""
