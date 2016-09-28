@@ -57,9 +57,10 @@ def start(args):
 
     CM_SERVER_PORT = 7180
     HUE_SERVER_PORT = 8888
+    YARN_RM_PORT = 8088
 
     primary_node = Node(hostname=args.primary_node[0], network=args.network,
-                        image=primary_node_image, ports=[CM_SERVER_PORT, HUE_SERVER_PORT])
+                        image=primary_node_image, ports=[CM_SERVER_PORT, HUE_SERVER_PORT, YARN_RM_PORT])
 
     secondary_nodes = [Node(hostname=hostname, network=args.network, image=secondary_node_image)
                        for hostname in args.secondary_nodes]
@@ -139,11 +140,14 @@ def start(args):
                 deployment.cluster.delete_service(service.name)
 
     hue_server_host_port = get_host_port_binding(primary_node.container_id, HUE_SERVER_PORT)
+    yarn_rm_host_port = get_host_port_binding(primary_node.container_id, YARN_RM_PORT)
     for service in deployment.cluster.get_all_services():
         if service.type == 'HUE':
             logger.info("Once its service starts, Hue server will be accessible at http://%s:%s",
                         getfqdn(), hue_server_host_port)
-            break
+        elif service.type == 'YARN':
+            logger.info("Once its service starts, Yarn resource manager will be accessible at http://%s:%s",
+                        getfqdn(), yarn_rm_host_port)            
 
     logger.info("Deploying client configuration...")
     deployment.cluster.deploy_client_config().wait()
