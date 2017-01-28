@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM debian:wheezy
+FROM ubuntu
 
 # Use a label indicating that a container is running the clusterdock framework to allow the
 # framework to handle things like stopping containers on the host machine without accidentally
