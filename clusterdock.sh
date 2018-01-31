@@ -1,5 +1,8 @@
+# Copyright (C) 2012 - 2018 Cloudera, Inc.
+# All Rights Reserved.
+
 #!/usr/bin/env bash
-#
+
 # This helper script is designed to be sourced, at which time its functions are made available
 # to the user. Most functions defined have functionality defined by environmental variables, which
 # can be set during invocation. For example,

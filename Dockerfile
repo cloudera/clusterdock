@@ -1,3 +1,6 @@
+# Copyright (C) 2012 - 2018 Cloudera, Inc.
+# All Rights Reserved.
+
 FROM debian:wheezy
 
 # Use a label indicating that a container is running the clusterdock framework to allow the

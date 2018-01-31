@@ -1,3 +1,6 @@
+# Copyright (C) 2012 - 2018 Cloudera, Inc.
+# All Rights Reserved.
+
 backports.ssl-match-hostname==3.5.0.1
 braceexpand==0.1.2
 cffi==1.6.0
