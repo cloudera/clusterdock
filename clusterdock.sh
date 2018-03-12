@@ -127,7 +127,7 @@ clusterdock_ssh() {
 
   local ID
   for ID in $(docker ps -qa); do
-    if [ "$(docker inspect --format '{{.Config.Hostname}}' ${ID})" == "${NODE}" ]; then
+    if [ "$(docker inspect --format '{{.Config.Hostname}}' ${ID})" = "${NODE}" ]; then
       break
     fi
   done
