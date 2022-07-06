@@ -10,7 +10,7 @@ docker-py==1.8.1
 ecdsa==0.13
 enum34==1.1.6
 Fabric==1.11.1
-html5lib==0.999
+html5lib==0.999999999
 idna==2.1
 inflection==0.3.1
 ipaddress==1.0.16
